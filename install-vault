@@ -1,0 +1,84 @@
+#!/usr/bin/ansible-playbook --inventory=./inventory
+---
+- name: Vault Cluster as Config | Installation
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  tasks:
+
+  - name: Verify playbook variables
+    ansible.builtin.import_tasks:
+      file: tasks/assert.yml
+    run_once: yes
+    delegate_to: localhost
+
+  - name: Install prerequisites
+    ansible.builtin.package:
+      name: "{{ vault_prerequisites }}"
+
+  - name: Install Vault cluster
+    ansible.builtin.include_tasks:
+      file: "tasks/{{ vault_installation_method }}.yml"
+
+  - name: Start and enable vault systemd unit
+    ansible.builtin.service:
+      name: vault
+      state: started
+      enabled: yes
+
+- name: Vault Cluster as Config | Initialization
+  hosts: all
+  become: yes
+  gather_facts: no
+
+  tasks:
+  
+  - name: Unseal Vault cluster
+    ansible.builtin.include_tasks:
+      file: "tasks/unseal.yml"
+
+  # Test Vault cluster secrets pki store
+  # - name: Mount pki store for root CA
+  #   ansible.builtin.include_tasks:
+  #     file: "mount-root-pki.yml"
+
+  # - name: Mount pki store for intermediate CA
+  #   ansible.builtin.include_tasks:
+  #     file: "mount-inter-pki.yml"
+
+  # - name: Generate private root CA
+  #   ansible.builtin.include_tasks:
+  #     file: "write-root-ca.yml"
+
+  # - name: Create private root CA issuer
+  #   ansible.builtin.include_tasks:
+  #     file: "write-root-issuer.yml"
+
+  # - name: Generate private intermediate CA
+  #   ansible.builtin.include_tasks:
+  #     file: "write-inter-ca.yml"
+
+  # - name: Sign private intermediate CSR
+  #   ansible.builtin.include_tasks:
+  #     file: "write-inter-csr.yml"
+
+  # - name: Sign CSR for private intermediate CA
+  #   ansible.builtin.include_tasks:
+  #     file: "write-inter-csr.yml"
+
+  # - name: Create private intermediate certificate
+  #   ansible.builtin.include_tasks:
+  #     file: "write-inter-crt.yml"
+
+  # - name: Create private intermediate CA issuer
+  #   ansible.builtin.include_tasks:
+  #     file: "write-inter-issuer.yml"
+
+  # - name: Create private intermediate role
+  #   ansible.builtin.include_tasks:
+  #     file: "write-inter-issuer.yml"
+
+  # - name: Issue private intermediate certificate
+  #   ansible.builtin.include_tasks:
+  #     file: "write-inter-certificate.yml"
